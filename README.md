@@ -1,2 +1,3 @@
 # ors-extraction
-Extracting network distance data from Openroute Service
+Extracting CDA centroid point network distance data from Openroute Service
+
