@@ -8,7 +8,7 @@ import time
 import math
 from itertools import combinations
 
-my_key = "5b3ce3597851110001cf6248b4ada0ce59414b1fb627a1032b519447"
+my_key = "XXXXX"
 MAX_DIST = 5
 
 
@@ -126,24 +126,13 @@ def c10_multiconditional(dic_single_counts, dic_pairs):
                 for i in chosen:
                     if k.split('.')[0] == str(i):
                         temp_pairs[k.split('.')[-1]] = temp_pairs.get(k.split('.')[-1], 0) + t_dsc[k.split('.')[-1]]
-                        #print("adding ",t_dsc[k.split('.')[-1]]," to temp_pairs for", k.split('.')[-1])
                     elif k.split('.')[-1] == str(i):
                         temp_pairs[k.split('.')[0]] = temp_pairs.get(k.split('.')[0], 0) + t_dsc[k.split('.')[0]]
-                        #print("adding ",t_dsc[k.split('.')[0]]," to temp_pairs for", k.split('.')[0])
-            #if len(temp_pairs) < 9:
-            #    print("LESS THAN 9")
         max_point_1 = list(filter(lambda x: x[1] == max(temp_pairs.values()), temp_pairs.items()))[0]
         chosen.append(max_point_1[0])
         t_dsc[max_point_1[0]] = -1
-        #print("NEW CHOSEN:", chosen)
-        #input("continue?")
     print("sent are:", [str(i) for i in list(set(chosen))])
     return [str(i) for i in list(set(chosen))]
-    ### STILL NEEDS WORK
-
-
-
-
 
 def pairs_given_n_points(point_list, dic_pairs):
     # given n points in point_list, count how many pairs contain at least two of the points
@@ -315,10 +304,6 @@ all_combos2.to_excel("all_combos2.xlsx")
 '''
 
 
-
-
-
-
 #ll_list = pd.read_excel('cda_ottawa_gat_points.xls')
 ll_list = pd.read_excel('cda_greater_vancouver_centroid.xls')
 ll_list = ll_list[['ORIG_FID', 'LONGITUDE', 'LATITUDE']]
@@ -395,10 +380,3 @@ all_combos3.to_csv("all_combos3.csv")
 all_combos3.to_excel("all_combos3.xlsx")
 
 print("done running them all")
-
-
-'''
-for_graph = pd.DataFrame(data = [b10_pairs_pulled, b10_jlm_pairs_pulled, c10_pairs_pulled])
-for_graph.to_csv("FOR_GRAPH.csv")
-for_graph.to_excel("FOR_GRAPH.xlsx")
-'''
