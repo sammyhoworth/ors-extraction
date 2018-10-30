@@ -159,6 +159,10 @@ def pairs_given_n_points(point_list, dic_pairs):
 
 ##############
 
+
+csd = input("Which CSD? (v or o for vancouver or ottawa)")
+
+
 '''
 #to_exec = [""]
 
@@ -316,13 +320,13 @@ all_combos2.to_excel("all_combos2.xlsx")
 
 
 
+if csd == 'o':
+    ll_list = pd.read_excel('cda_ottawa_gat_points.xls')
+elif csd == 'v':
+    ll_list = pd.read_excel('cda_greater_vancouver_centroid.xls')
 
-
-
-#ll_list = pd.read_excel('cda_ottawa_gat_points.xls')
-ll_list = pd.read_excel('cda_greater_vancouver_centroid.xls')
 ll_list = ll_list[['ORIG_FID', 'LONGITUDE', 'LATITUDE']]
-ll_list = ll_list.head(150)
+#ll_list = ll_list.head(150)
 
 
 
@@ -387,14 +391,14 @@ while not end:
     #input("continue.....")
 
 for_graph3 = pd.DataFrame(data = c10_pairs_pulled)
-for_graph3.to_csv('for_graph3.csv')
-for_graph3.to_excel('for_graph3.xlsx')
+for_graph3.to_csv('for_graph3_{}.csv'.format(csd))
+for_graph3.to_excel('for_graph3_{}.xlsx'.format(csd))
 
 all_combos3 = pd.DataFrame(data = all_combos)
-all_combos3.to_csv("all_combos3.csv")
-all_combos3.to_excel("all_combos3.xlsx")
+all_combos3.to_csv("all_combos3_{}.csv".format(csd))
+all_combos3.to_excel("all_combos3_{}.xlsx".format(csd))
 
-print("done running them all")
+print("done running them all for csd {}".format(csd))
 
 
 '''
