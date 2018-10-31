@@ -4,19 +4,122 @@ import pandas as pd
 import requests
 import json
 import time
+import datetime
+
+sh_key = "insert key"
+location = input("Ottawa (o) or Vancouver (v)? ")
+current_date = str(datetime.datetime.now()).split(' ')[0]
+STOP_PULLING_AT = 50
+
+exists = False
+# first time running, will create 'pulled_request_codes.csv' file, otherwise will read and add to existing
+try:
+    prc = pd.read_csv('pulled_request_codes_{}.csv'.format(location))
+    exists = True
+except:
+    print("cant find file")
+
+if exists:
+    pulled_codes = prc['request_code'].tolist()
+else:
+    pulled_codes = []
 
 
-sh_key = "insert_key"
-##### NEED TO CREATE A FILE WITH FIDS AND 'SNAPPED' COORDINATES
+####    Grab the requests that haven't been pulled yet
+ar = pd.read_csv("all_requests_{}.csv".format(location))
 
-####    WORKING WITH API
-ar = pd.read_csv("all_requests.csv")
-ar = ar.head(5)
+not_pulled_strings = []
+not_pulled_fids = []
+not_pulled_codes = []
 
 
-all_json_data = []
-all_fids = []
+for i, row in ar.iterrows():
+    req_code = row['request_code']
+    if req_code in pulled_codes:
+        continue
+    else:
+        not_pulled_strings.append(row['request_string'])
+        not_pulled_fids.append(row.tolist()[2:-1])
+        not_pulled_codes.append(req_code)
+        
+
+# NOW PULLING
+cumu_pulls = 0
+pulled_json_data = []
+pulled_strings = []
+pulled_fids = []
+pulled_codes = []
+
+for ri in range(0,len(not_pulled_strings)):
+    if cumu_pulls == STOP_PULLING_AT:
+        print("     --- Cumulative pulls limit hit ({})".format(cumu_pulls))
+        break
+
+    req = not_pulled_strings[ri]
+    fid = not_pulled_fids[ri]
+    code = not_pulled_codes[ri]
+    
+    try:
+        r = requests.get(req)
+        json_data = json.loads(r.text)
+        pulled_json_data.append(json_data)
+        pulled_strings.append(req)
+        pulled_fids.append(fid)
+        pulled_codes.append(code)
+        
+    except:
+        print("some error")
+
+    cumu_pulls += 1
+    if cumu_pulls % 100 == 0:
+        print("cumu_pulls:", cumu_pulls)
+
+pulled_this_time = pd.DataFrame({'pulled_strings':pulled_strings, 'pulled_fids':pulled_fids,'pulled_codes':pulled_codes})
+prc2 = pd.DataFrame(data = pulled_codes, columns = ['request_code'])
+prc2.to_csv('pulled_request_codes_{}_TESTING.csv'.format(location))
+
+
+t_dp = []
+t_bad = []
+n_good = 0
+n_bad = 0
+
+cc = 0
+
+for z in range(0, len(pulled_json_data)):
+    if z % 30 == 0:
+        time.sleep(120)
+        print('pull number ',z)
+        print("sleeping for 120 seconds")
+    
+    js = pulled_json_data[z]
+   
+    try:
+        for i in range(0, len(js['sources'])):
+            for j in range(0, len(js['destinations'])):
+                t_dp.append([js['sources'][i]['location'], js['sources'][j]['location'],js['distances'][i][j], pulled_fids[z][i], pulled_fids[z][j]])
+                n_good += 1
+    except:
+        print("some error part 2 for run {}".format(z))
+        t_bad.append(js)
+        n_bad += 1
+
+    final_df = pd.DataFrame(data = t_dp, columns = ['source_snapped_coords', 'destination_coords', 'network_distance', 'FID_source', 'FID_dest'])
+
+final_df.to_excel("final_df_{}_{}.xlsx".format(location, current_date))
+print("number of good pulls: ", n_good)
+print("number of bad  pulls: ", n_bad)
+
+
+    
+
+'''
 for i,row in ar.iterrows():
+    if cumu_pulls == STOP_PULLING_AT:
+
+        print("     --- Cumulative pulls hit {}".format(cumu_pulls))
+        break
+    
     req = row['request_string']
     fids = row.tolist()[2:]
 
@@ -28,164 +131,33 @@ for i,row in ar.iterrows():
     except:
         print("some error")
 
+    cumu_pulls += 1
+    if cumu_pulls % 100 == 0:
+        print("cumu_pulls:", cumu_pulls)
+
 t_dp = []
+t_bad = []
+n_good = 0
+n_bad = 0
 for z in range(0, len(all_json_data)):
     js = all_json_data[z]
-    for i in range(0, len(js['sources'])):
-        for j in range(0, len(js['destinations'])):
-            t_dp.append([js['sources'][i]['location'], js['sources'][j]['location'],js['distances'][i][j], all_fids[z][i], all_fids[z][j]])
-final_df = pd.DataFrame(data = t_dp, columns = ['source_snapped_coords', 'destination_coords', 'network_distance', 'FID_source', 'FID_dest'])
-final_df.to_excel("final_df.xlsx")
+    try:
+        for i in range(0, len(js['sources'])):
+            for j in range(0, len(js['destinations'])):
+                t_dp.append([js['sources'][i]['location'], js['sources'][j]['location'],js['distances'][i][j], all_fids[z][i], all_fids[z][j]])
+                n_good+=1
+    except:
+        print("some error part 2 for run {}".format(z))
+        t_bad.append(js)
+        n_bad+=1
+        
+    final_df = pd.DataFrame(data = t_dp, columns = ['source_snapped_coords', 'destination_coords', 'network_distance', 'FID_source', 'FID_dest'])
 
-
-'''
-r = requests.get(s1+s2+s3)
-json_data = json.loads(r.text)
-    all_json_data.append(json_data)
-
-t_dp = []
-for js in all_json_data:
-    for i in range(0, len(js['sources'])):
-        for j in range(0, len(js['destinations'])):
-            t_dp.append([js['sources'][i]['location'], js['sources'][j]['location'],js['distances'][i][j]])
-
-final_df = pd.DataFrame(data = t_dp)
-final_df.to_excel("final_df.xlsx")
+final_df.to_excel("final_df_{}.xlsx".format(current_date))
+print("number of good pulls: ",n_good)
+print("number of bad  pulls: ",n_bad)
 
 '''
 
 
 
-
-
-
-
-
-
-
-
-
-
-'''
-
-
-###
-def some(x,n):
-    return x.loc[random.sample(x.index.tolist(),n)]
-
-# read in example list of 200 lat-lon pairs
-pairs = pd.read_excel("INPUT_distance_matrix_for_meeting.xlsx")
-
-all_pair_combinations = []
-for i in pairs['ORIG_FID'].tolist():
-    for j in pairs['ORIG_FID'].tolist():
-        all_pair_combinations.append([i,j])
-
-df_pair_combinations = pd.DataFrame(data = all_pair_combinations, columns = ['FID1', 'FID2'])
-df_pair_combinations = df_pair_combinations.merge(pairs, left_on = 'FID1', right_on = 'ORIG_FID', how = 'left')
-df_pair_combinations = df_pair_combinations.merge(pairs, left_on = 'FID2', right_on = 'ORIG_FID', how = 'left')
-df_pair_combinations.columns = ['FID1','FID2','drop','lon1','lat1','drop','lon2','lat2']
-df_pair_combinations = df_pair_combinations[[i for i in df_pair_combinations.columns if i != 'drop']]
-
-# reduce example sample by keeping random (for some variation) rows
-sample_pairs = some(df_pair_combinations, 1000)
-sample_pairs.sort_values(by = ['FID1', 'FID2'], inplace = True)
-
-sample_pairs.to_excel('sample_pairs.xlsx')
-
-to_send_all = []
-for i, r in sample_pairs.iterrows():
-    to_send_all.append([r['FID1'], r['FID2'], (r['lon1'], r['lat1']), (r['lon2'], r['lat2'])])
-
-df_all = pd.DataFrame(data = to_send_all, columns = ['fid1', 'fid2', 'coords1', 'coords2'])
-df_all.to_excel("df_all.xlsx")
-
-print("Coordinate pairs established")
-
-cts1 = df_all['coords1'].tolist()
-cts2 = df_all['coords2'].tolist()
-
-transport_method = 'driving-car' # ALL OPTIONS: driving-car; driving-hgv; cycling-regular; cycling-safe; cycling-mountain; cycling-tour; cycling-electric; foot-walking; foot-hiking; wheelchair
-metrics = "distance" #%7Cduration alternatively can just keep 'distance' or 'duration'
-
-all_requests = []
-all_json_data = []
-
-s1 = "https://api.openrouteservice.org/matrix?&api_key={}&profile={}".format(sh_key, transport_method)
-
-for i in range(0, 400, 10):#len(cts1), 10):
-    print("pull number:  ", i//10 + 1)
-    tcts1 = cts1[i:i+10]
-    tcts2 = cts2[i:i+10]
-
-    c1 = str(tcts1[0][0]) + "," + str((tcts1[0][1]))
-    c2 = str(tcts2[0][0]) + "," + str((tcts2[0][1]))
-
-    s2 = "&locations={}|{}".format(c1,c2)
-    for xc in range(1, len(tcts1)):
-        c1b = str(tcts1[xc][0]) + "," + str((tcts1[xc][1]))
-        c2b = str(tcts2[xc][0]) + "," + str((tcts2[xc][1]))
-        #print(c1b)
-        #print(c2b)
-        s2 = s2 + "|" + c1b + "|" + c2b
-
-
-    s3 = "&metrics={}".format(metrics)
-
-    print()
-
-    r = requests.get(s1+s2+s3)
-    all_requests.append(str(s1+s2+s3))
-
-    json_data = json.loads(r.text)
-    all_json_data.append(json_data)
-
-
-ar = pd.DataFrame(data = all_requests)
-ar.to_csv("all_requests.csv")
-
-
-t_dp = []
-for js in all_json_data:
-    for i in range(0, len(js['sources'])):
-        for j in range(0,len(js['destinations'])):
-            t_dp.append([js['sources'][i]['location'], js['sources'][j]['location'],js['distances'][i][j]])
-
-final_df = pd.DataFrame(data = t_dp)
-final_df.to_excel("final_df.xlsx")
-#print(json_data['sources'])
-
-#print(json_data['destinations'])
-'''
-
-
-'''
-r = requests.get("https://api.openrouteservice.org/matrix?api_key=5b3ce3597851110001cf6248b4ada0ce59414b1fb627a1032b519447&profile=driving-car&locations=9.970093,48.477473%7C9.207916,49.153868%7C37.573242,55.801281%7C115.663757,38.106467")
-#request.open('GET', 'https://api.openrouteservice.org/matrix?api_key=5b3ce3597851110001cf6248b4ada0ce59414b1fb627a1032b519447&profile=driving-car&locations=9.970093,48.477473%7C9.207916,49.153868%7C37.573242,55.801281%7C115.663757,38.106467');
-json_data = json.loads(r.text)
-for i in json_data:
-    print(json_data[i])
-    print()
-#print(json_data)
-
-
-to_send = pd.read_excel("to_send.xlsx")
-# ensure this file has the following columns:
-#   1   containing lists of 10 FIDs
-#   2   containing lists of lat-lon coords for each FID
-
-coords_to_send = to_send['coords_list'].tolist()
-
-transport_method = 'driving-car' # ALL OPTIONS: driving-car; driving-hgv; cycling-regular; cycling-safe; cycling-mountain; cycling-tour; cycling-electric; foot-walking; foot-hiking; wheelchair
-metrics = "distance%7Cduration" # alternatively can just keep 'distance' or 'duration'
-
-for cts in coords_to_send:
-    s1 = "https://api.openrouteservice.org/matrix?api_key={}&profile={}".format(sh_key, transport_method)
-    s2 = "&locations={}%2C{}".format(cts[0][0], cts[[0][1])
-                                     #s2 = "&locations={}%2C{}%7C{}%2C{}%7C{}%2C{}%7C{}%2C{}%7C{}%2C{}%7C{}%2C{}%7C{}%2C{}%7C{}%2C{}%7C{}%2C{}%7C{}%2C{}".format()
-    for c in cts[1:]:
-        s2 = s2+"%7C{}%2C{}".format(c[0], c[1])
-    s3 = "&metrics={}".format(metrics)
-
-    print(s1+s2+s3)
-'''
