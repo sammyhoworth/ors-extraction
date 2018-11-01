@@ -6,10 +6,9 @@ import json
 import time
 import datetime
 
-sh_key = "insert key"
 location = input("Ottawa (o) or Vancouver (v)? ")
 current_date = str(datetime.datetime.now()).split(' ')[0]
-STOP_PULLING_AT = 50
+STOP_PULLING_AT = 2000
 
 exists = False
 # first time running, will create 'pulled_request_codes.csv' file, otherwise will read and add to existing
@@ -50,11 +49,17 @@ pulled_strings = []
 pulled_fids = []
 pulled_codes = []
 
+pull_n = 0
+
 for ri in range(0,len(not_pulled_strings)):
+    pull_n += 1
     if cumu_pulls == STOP_PULLING_AT:
         print("     --- Cumulative pulls limit hit ({})".format(cumu_pulls))
         break
 
+    if pull_n % 40 == 0:
+        time.sleep(90)
+        
     req = not_pulled_strings[ri]
     fid = not_pulled_fids[ri]
     code = not_pulled_codes[ri]
@@ -84,14 +89,7 @@ t_bad = []
 n_good = 0
 n_bad = 0
 
-cc = 0
-
 for z in range(0, len(pulled_json_data)):
-    if z % 30 == 0:
-        time.sleep(120)
-        print('pull number ',z)
-        print("sleeping for 120 seconds")
-    
     js = pulled_json_data[z]
    
     try:
