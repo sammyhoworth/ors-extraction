@@ -9,7 +9,8 @@ import math
 from itertools import combinations
 
 my_key = "insert_key"
-MAX_DIST = 5
+MAX_DIST = 10
+location = input("Ottawa (o) or Vancouver (v)? ")
 
 
 ## user-defined functions
@@ -160,7 +161,7 @@ def pairs_given_n_points(point_list, dic_pairs):
 ##############
 
 
-csd = input("Which CSD? (v or o for vancouver or ottawa)")
+
 
 
 '''
@@ -320,13 +321,13 @@ all_combos2.to_excel("all_combos2.xlsx")
 
 
 
-if csd == 'o':
+
+if location == 'o':
     ll_list = pd.read_excel('cda_ottawa_gat_points.xls')
-elif csd == 'v':
+elif location == 'v':
     ll_list = pd.read_excel('cda_greater_vancouver_centroid.xls')
 
 ll_list = ll_list[['ORIG_FID', 'LONGITUDE', 'LATITUDE']]
-#ll_list = ll_list.head(150)
 
 
 
@@ -341,6 +342,8 @@ df_all_pairs = df_all_pairs.merge(ll_list, left_on = 'fid1', right_on = 'ORIG_FI
 df_all_pairs = df_all_pairs.merge(ll_list, left_on = 'fid2', right_on = 'ORIG_FID', how = 'left')
 df_all_pairs = df_all_pairs[['fid1', 'fid2', 'LONGITUDE_x', 'LATITUDE_x', 'LONGITUDE_y', 'LATITUDE_y']]
 df_all_pairs['kmdist_euclid'] = df_all_pairs.apply(kmdist_latlong, axis = 1)
+
+df_all_pairs.to_csv("all_pairs_with_distances_{}".format(location))
 
 df_need = df_all_pairs[df_all_pairs['kmdist_euclid'] < MAX_DIST]
 
@@ -391,14 +394,14 @@ while not end:
     #input("continue.....")
 
 for_graph3 = pd.DataFrame(data = c10_pairs_pulled)
-for_graph3.to_csv('for_graph3_{}.csv'.format(csd))
-for_graph3.to_excel('for_graph3_{}.xlsx'.format(csd))
+for_graph3.to_csv('for_graph3_{}.csv'.format(location))
+for_graph3.to_excel('for_graph3_{}.xlsx'.format(location))
 
 all_combos3 = pd.DataFrame(data = all_combos)
-all_combos3.to_csv("all_combos3_{}.csv".format(csd))
-all_combos3.to_excel("all_combos3_{}.xlsx".format(csd))
+all_combos3.to_csv("all_combos3_{}_{}.csv".format(location, MAX_DIST))
+all_combos3.to_excel("all_combos3_{}_{}.xlsx".format(location, MAX_DIST))
 
-print("done running them all for csd {}".format(csd))
+print("done running them all for location {}".format(location))
 
 
 '''
