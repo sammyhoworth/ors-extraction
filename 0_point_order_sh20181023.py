@@ -8,10 +8,8 @@ import time
 import math
 from itertools import combinations
 
-my_key = "insert_key"
-MAX_DIST = 10
 location = input("Ottawa (o) or Vancouver (v)? ")
-
+MAX_DIST = 3.5 #int(input("Max birds-eye distance to consider:   "))
 
 ## user-defined functions
 
@@ -327,31 +325,33 @@ if location == 'o':
 elif location == 'v':
     ll_list = pd.read_excel('cda_greater_vancouver_centroid.xls')
 
-ll_list = ll_list[['ORIG_FID', 'LONGITUDE', 'LATITUDE']]
+ll_list = ll_list[['DAUID', 'LONGITUDE', 'LATITUDE']]
 
 
 
 all_pairs = []
 all_combos = []
 for index_a, row_a in ll_list.iterrows():
+    if index_a % 500 == 0:
+        print("index_a:", index_a)
     for index_b, row_b in ll_list.iterrows():
-        all_pairs.append([row_a['ORIG_FID'], row_b['ORIG_FID']])
+        all_pairs.append([row_a['DAUID'], row_b['DAUID']])
 
-df_all_pairs = pd.DataFrame(data = all_pairs, columns = ['fid1', 'fid2'])
-df_all_pairs = df_all_pairs.merge(ll_list, left_on = 'fid1', right_on = 'ORIG_FID', how = 'left')
-df_all_pairs = df_all_pairs.merge(ll_list, left_on = 'fid2', right_on = 'ORIG_FID', how = 'left')
-df_all_pairs = df_all_pairs[['fid1', 'fid2', 'LONGITUDE_x', 'LATITUDE_x', 'LONGITUDE_y', 'LATITUDE_y']]
+df_all_pairs = pd.DataFrame(data = all_pairs, columns = ['dauid1', 'dauid2'])
+df_all_pairs = df_all_pairs.merge(ll_list, left_on = 'dauid1', right_on = 'DAUID', how = 'left')
+df_all_pairs = df_all_pairs.merge(ll_list, left_on = 'dauid2', right_on = 'DAUID', how = 'left')
+df_all_pairs = df_all_pairs[['dauid1', 'dauid2', 'LONGITUDE_x', 'LATITUDE_x', 'LONGITUDE_y', 'LATITUDE_y']]
 df_all_pairs['kmdist_euclid'] = df_all_pairs.apply(kmdist_latlong, axis = 1)
-
-df_all_pairs.to_csv("all_pairs_with_distances_{}".format(location))
-
+print("df_all_pairs completed")
+df_all_pairs.to_csv("all_pairs_with_distances_{}.csv".format(location))
+print("df_all_pairs saved as csv")
 df_need = df_all_pairs[df_all_pairs['kmdist_euclid'] < MAX_DIST]
 
 need = {}
 count = 0
 for index, row in df_need.iterrows():
-    need[str(int(row['fid1'])) + '.' + str(int(row['fid2']))] = False
-    need[str(int(row['fid2'])) + '.' + str(int(row['fid1']))] = False
+    need[str(int(row['dauid1'])) + '.' + str(int(row['dauid2']))] = False
+    need[str(int(row['dauid2'])) + '.' + str(int(row['dauid1']))] = False
     count += 1
 print("All {} relevant pairs set to false".format(count))
 
