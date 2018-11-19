@@ -25,7 +25,7 @@ location = input("Ottawa (o) or Vancouver (v)? ")
 
 #   read-in sets of 10 to send
 sets = pd.read_excel("all_combos3_o.xlsx")
-#   read-in FIDs with lat-lon info
+#   read-in DAUIDs with lat-lon info
 #all_points = pd.read_excel("cda_greater_vancouver_centroid.xls")
 all_points = pd.read_excel("cda_ottawa_gat_points.xls")
 
@@ -38,8 +38,8 @@ metrics = "distance" #%7Cduration alternatively can just keep 'distance' or 'dur
 all_requests = []
 
 for i, row in df_for_requests.iterrows():
-    temp_df = pd.DataFrame(data = row.tolist(), columns = ['FID'])
-    temp_df = temp_df.merge(all_points[['FID', 'LONGITUDE', 'LATITUDE']], on = 'FID', how = 'left')
+    temp_df = pd.DataFrame(data = row.tolist(), columns = ['DAUID'])
+    temp_df = temp_df.merge(all_points[['DAUID', 'LONGITUDE', 'LATITUDE']], on = 'DAUID', how = 'left')
 
     lons = [i for i in temp_df['LONGITUDE'].tolist() if str(i) != "nan"]
     lats = [i for i in temp_df['LATITUDE'].tolist() if str(i) != "nan"]
@@ -65,7 +65,7 @@ ar.to_csv("all_requests_{}.csv".format(location))
 
 #   read-in sets of 10 to send
 sets = pd.read_excel("all_combos3.xlsx")
-#   read-in FIDs with lat-lon info
+#   read-in DAUIDs with lat-lon info
 all_points = pd.read_excel("cda_greater_vancouver_centroid.xls")
 
 #df_for_requests = sets.head(REQUESTS_PER_DAY)
@@ -77,8 +77,8 @@ metrics = "distance" #%7Cduration alternatively can just keep 'distance' or 'dur
 all_requests = []
 
 for i, row in df_for_requests.iterrows():
-    temp_df = pd.DataFrame(data = row.tolist(), columns = ['FID'])
-    temp_df = temp_df.merge(all_points[['FID', 'LONGITUDE', 'LATITUDE']], on = 'FID', how = 'left')
+    temp_df = pd.DataFrame(data = row.tolist(), columns = ['DAUID'])
+    temp_df = temp_df.merge(all_points[['DAUID', 'LONGITUDE', 'LATITUDE']], on = 'DAUID', how = 'left')
 
     lons = [i for i in temp_df['LONGITUDE'].tolist() if str(i) != "nan"]
     lats = [i for i in temp_df['LATITUDE'].tolist() if str(i) != "nan"]
