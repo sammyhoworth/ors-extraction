@@ -1,17 +1,12 @@
-
-
 import pandas as pd
 import random
 import requests
 import json
 import time
 
-
-
 REQUESTS_PER_DAY = 100
-sh_key = "5b3ce3597851110001cf6248b4ada0ce59414b1fb627a1032b519447"
+sh_key = "insert-key"
 location = input("Ottawa (o) or Vancouver (v)? ")
-
 
 #   read-in sets of 10 to send
 sets = pd.read_excel("all_combos3_o.xlsx")
@@ -21,7 +16,6 @@ all_points = pd.read_excel("cda_ottawa_gat_points.xls")
 
 #df_for_requests = sets.head(REQUESTS_PER_DAY)
 df_for_requests = sets
-
 
 transport_method = 'driving-car' # ALL OPTIONS: driving-car; driving-hgv; cycling-regular; cycling-safe; cycling-mountain; cycling-tour; cycling-electric; foot-walking; foot-hiking; wheelchair
 metrics = "distance" #%7Cduration alternatively can just keep 'distance' or 'duration'
