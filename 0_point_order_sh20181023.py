@@ -6,10 +6,11 @@ import json
 import pandas as pd
 import time
 import math
-from itertools import combinations
+import os
+import pickle
 
 location = input("Ottawa (o) or Vancouver (v)? ")
-MAX_DIST = 3.5 #int(input("Max birds-eye distance to consider:   "))
+MAX_DIST = float(input("Max birds-eye distance to consider:   "))
 
 ## user-defined functions
 
@@ -78,8 +79,8 @@ def b10(dic_single_counts, dic_pairs):
         chosen.append(max_point[0])
         chosen_values.append(max_point[-1])
         t_dic_single_counts[chosen[-1]] = -1
-
     return chosen
+
 
 def b10_jlm(dic_single_counts, dic_pairs):
     t_dic_single_counts = dic_single_counts
@@ -319,7 +320,6 @@ all_combos2.to_excel("all_combos2.xlsx")
 
 
 
-
 if location == 'o':
     ll_list = pd.read_excel('cda_ottawa_gat_points.xls')
 elif location == 'v':
@@ -345,6 +345,7 @@ df_all_pairs['kmdist_euclid'] = df_all_pairs.apply(kmdist_latlong, axis = 1)
 print("df_all_pairs completed")
 df_all_pairs.to_csv("all_pairs_with_distances_{}.csv".format(location))
 print("df_all_pairs saved as csv")
+print('Euclidist file created')
 df_need = df_all_pairs[df_all_pairs['kmdist_euclid'] < MAX_DIST]
 
 need = {}
@@ -363,6 +364,7 @@ c10_pairs_pulled = []
 need_remaining = [len(need)]
 c = 0
 end = False
+inter_i = 0
 while not end:
     c+=1
     coord_counts = {}
@@ -373,6 +375,16 @@ while not end:
 
     chosen = c10_multiconditional(coord_counts, need)
     all_combos.append(chosen)
+# NEW ADDITION
+    if len(all_combos) % 500 == 0:
+        os.makedirs('C:/Users/samue/Documents/deil/ors_project/all_combos_inter/{}'.format(location), exist_ok = True)
+        filename = "all_combos_inter_{}_{}".format(location, inter_i)
+        with open('C:/Users/samue/Documents/deil/ors_project/all_combos_inter/{}/all_combos_inter_{}_{}'.format(location, location, inter_i), 'wb') as f:
+            pickle.dump(all_combos, f)
+            f.close()
+        inter_i += 1
+        all_combos = [] # should we be using .clear()  ??
+# NEW ADDITION
     for i in chosen:
         for j in chosen:
             if i+'.'+j in need.keys():
@@ -390,16 +402,38 @@ while not end:
     print()
     c10_pairs_pulled.append(need_remaining[0] - need_remaining[-1])
     end = need_remaining[-1] < 1
+with open('C:/Users/samue/Documents/deil/ors_project/all_combos_inter/{}/all_combos_inter_{}_{}'.format(location, location, inter_i), 'wb') as f:
+    pickle.dump(all_combos, f)
+    f.close()
 
     #input("continue.....")
+
 
 for_graph3 = pd.DataFrame(data = c10_pairs_pulled)
 for_graph3.to_csv('for_graph3_{}.csv'.format(location))
 for_graph3.to_excel('for_graph3_{}.xlsx'.format(location))
 
-all_combos3 = pd.DataFrame(data = all_combos)
-all_combos3.to_csv("all_combos3_{}_{}.csv".format(location, MAX_DIST))
-all_combos3.to_excel("all_combos3_{}_{}.xlsx".format(location, MAX_DIST))
+
+with open('C:/Users/samue/Documents/deil/ors_project/all_combos_inter/{}/all_combos_inter_{}_{}'.format(location, location, inter_i), 'rb') as f:
+    in1 = pickle.load(f)
+
+df = pd.DataFrame(data = in1)
+stop = False
+i = 1
+while not stop:
+    try: # ALWAYS SKIPPING TO THE EXCEPT BLOCK
+        with open('C:/Users/samue/Documents/deil/ors_project/all_combos_inter/{}/all_combos_inter_{}_{}'.format(location, location, i), 'rb') as f2:
+            df = df.append(DataFrame(data = pickle.load(f2)))
+        i+=1
+        print("Reading-in all_combos_inter_{}_{}".format(location, i))
+    except:
+        print("IN THE EXCEPT BLOCK")
+        stop = True
+
+#all_combos3 = pd.DataFrame()
+#all_combos3 = pd.DataFrame(data = all_combos)
+df.to_csv("all_combos3_{}_{}.csv".format(location, MAX_DIST))
+#all_combos3.to_excel("all_combos3_{}_{}.xlsx".format(location, MAX_DIST))
 
 print("done running them all for location {}".format(location))
 
